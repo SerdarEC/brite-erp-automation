@@ -1,0 +1,5 @@
+.DS_Store
+.idea/
+briteerpautomation.iml
+target/
+test-output
