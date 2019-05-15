@@ -1,22 +1,18 @@
 package com.briteerp.utilities;
 
 import com.google.common.base.Function;
-import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.openqa.selenium.*;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.*;
-import org.testng.Assert;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.*;
 
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 
 public class BrowserUtils {
 
@@ -26,38 +22,6 @@ public class BrowserUtils {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Generates the String path to the screenshot taken.
-     * Within the method, the screenshot is taken and is saved into FileUtils.
-     * The String return will have a unique name destination of the screenshot itself.
-     *
-     * @param name Test name passed in as a String
-     * @return unique String representation of the file's location / path to file
-     */
-    public static String getScreenshot(String name) {
-        // name the screenshot with current date-time to avoid duplicate naming
-        String time = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
-
-        // TakeScreenshot -> interface from selenium which takes screenshots
-        TakesScreenshot takesScreenshot = (TakesScreenshot) Driver.getDriver();
-
-        File source = takesScreenshot.getScreenshotAs(OutputType.FILE);
-
-        // full path to the screenshot location
-        String target = System.getProperty("user.dir") + "/test-output/Screenshots" + name + time + ".png";
-
-        File finalDestination = new File(target);
-
-        // save the screenshot to the path given
-        try {
-            FileUtils.copyFile(source, finalDestination);
-        } catch (IOException io) {
-            io.printStackTrace();
-        }
-
-        return target;
     }
 
     /*
@@ -116,6 +80,11 @@ public class BrowserUtils {
         return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
     }
 
+    public static Boolean waitForInVisibility(By locator, int timeout) {
+        WebDriverWait wait = new WebDriverWait(Driver.getDriver(), timeout);
+        return wait.until(ExpectedConditions.invisibilityOfElementLocated(locator));
+    }
+
     public static WebElement waitForClickablility(WebElement element, int timeout) {
         WebDriverWait wait = new WebDriverWait(Driver.getDriver(), timeout);
         return wait.until(ExpectedConditions.elementToBeClickable(element));
@@ -133,12 +102,10 @@ public class BrowserUtils {
             }
         };
         try {
-            System.out.println("Waiting for page to load...");
             WebDriverWait wait = new WebDriverWait(Driver.getDriver(), timeOutInSeconds);
             wait.until(expectation);
-        } catch (Throwable error) {
-            System.out.println(
-                    "Timeout waiting for Page Load Request to complete after " + timeOutInSeconds + " seconds");
+        } catch (Exception error) {
+            error.printStackTrace();
         }
     }
 
@@ -158,39 +125,59 @@ public class BrowserUtils {
     /**
      * Verifies whether the element matching the provided locator is displayed on page
      * fails if the element matching the provided locator is not found or not displayed
+     *
      * @param by
      */
     public static void verifyElementDisplayed(By by) {
         try {
-            assertTrue(Driver.getDriver().findElement(by).isDisplayed(), "Element not visible: "+by);
+            assertTrue("Element not visible: " + by, Driver.getDriver().findElement(by).isDisplayed());
         } catch (NoSuchElementException e) {
-            fail("Element not found: " + by);
+            Assert.fail("Element not found: " + by);
 
         }
     }
+
+    /**
+     * Verifies whether the element matching the provided locator is NOT displayed on page
+     * fails if the element matching the provided locator is not found or not displayed
+     *
+     * @param by
+     */
+    public static void verifyElementNotDisplayed(By by) {
+        try {
+            assertFalse("Element should not be visible: " + by, Driver.getDriver().findElement(by).isDisplayed());
+        } catch (NoSuchElementException e) {
+            e.printStackTrace();
+
+        }
+    }
+
 
     /**
      * Verifies whether the element is displayed on page
      * fails if the element is not found or not displayed
+     *
      * @param element
      */
     public static void verifyElementDisplayed(WebElement element) {
         try {
-            assertTrue(element.isDisplayed(), "Element not visible: "+element);
+            assertTrue("Element not visible: " + element, element.isDisplayed());
         } catch (NoSuchElementException e) {
-            fail("Element not found: " + element);
+            Assert.fail("Element not found: " + element);
 
         }
     }
 
+
     /**
      * Waits for element to be not stale
+     *
      * @param element
      */
     public void waitForStaleElement(WebElement element) {
         int y = 0;
         while (y <= 15) {
-            if(y==1)
+            if (y == 1)
                 try {
                     element.isDisplayed();
                     break;
@@ -214,10 +201,11 @@ public class BrowserUtils {
 
     /**
      * Selects a random value from a dropdown list and returns the selected Web Element
+     *
      * @param select
      * @return
      */
-    public WebElement selectRandomTextFromDropdown(Select select) {
+    public static WebElement selectRandomTextFromDropdown(Select select) {
         Random random = new Random();
         List<WebElement> weblist = select.getOptions();
         int optionIndex = 1 + random.nextInt(weblist.size() - 1);
@@ -227,9 +215,10 @@ public class BrowserUtils {
 
     /**
      * Clicks on an element using JavaScript
+     *
      * @param element
      */
-    public void clickWithJS(WebElement element) {
+    public static void clickWithJS(WebElement element) {
         ((JavascriptExecutor) Driver.getDriver()).executeScript("arguments[0].scrollIntoView(true);", element);
         ((JavascriptExecutor) Driver.getDriver()).executeScript("arguments[0].click();", element);
     }
@@ -237,45 +226,96 @@ public class BrowserUtils {
 
     /**
      * Scrolls down to an element using JavaScript
+     *
      * @param element
      */
-    public void scrollToElement(WebElement element) {
+    public static void scrollToElement(WebElement element) {
         ((JavascriptExecutor) Driver.getDriver()).executeScript("arguments[0].scrollIntoView(true);", element);
     }
 
     /**
      * Performs double click action on an element
+     *
      * @param element
      */
-    public void doubleClick(WebElement element) {
+    public static void doubleClick(WebElement element) {
         new Actions(Driver.getDriver()).doubleClick(element).build().perform();
     }
 
     /**
      * Changes the HTML attribute of a Web Element to the given value using JavaScript
+     *
      * @param element
      * @param attributeName
      * @param attributeValue
      */
-    public void setAttribute(WebElement element, String attributeName, String attributeValue) {
+    public static void setAttribute(WebElement element, String attributeName, String attributeValue) {
         ((JavascriptExecutor) Driver.getDriver()).executeScript("arguments[0].setAttribute(arguments[1], arguments[2]);", element, attributeName, attributeValue);
     }
 
     /**
-     *
      * @param element
      * @param check
      */
-    public void selectCheckBox(WebElement element, boolean check){
-        if(check){
-            if(!element.isSelected()){
+    public static void selectCheckBox(WebElement element, boolean check) {
+        if (check) {
+            if (!element.isSelected()) {
                 element.click();
             }
         } else {
-            if(element.isSelected()){
+            if (element.isSelected()) {
                 element.click();
             }
         }
     }
 
+
+    public static void clickWithTimeOut(WebElement element, int timeout) {
+        for (int i = 0; i < timeout; i++) {
+            try {
+                element.click();
+                return;
+            } catch (WebDriverException e) {
+                wait(1);
+            }
+        }
+    }
+
+    /**
+     * executes the given JavaScript command on given web element
+     *
+     * @param element
+     */
+    public static void executeJScommand(WebElement element, String command) {
+        JavascriptExecutor jse = (JavascriptExecutor) Driver.getDriver();
+        jse.executeScript(command, element);
+
+    }
+
+    /**
+     * executes the given JavaScript command on given web element
+     *
+     * @param command
+     */
+    public static void executeJScommand(String command) {
+        JavascriptExecutor jse = (JavascriptExecutor) Driver.getDriver();
+        jse.executeScript(command);
+
+    }
+
+
+    /**
+     * Parse and return Integers from String
+     */
+    public static Integer parserInteger(String text) {
+        char[] c = text.toCharArray();
+        String result = "";
+        for (char character : c
+        ) {
+            if (Character.isDigit(character)) {
+                result += character;
+            }
+        }
+        return Integer.valueOf(result);
+    }
 }
